@@ -13,13 +13,20 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { deepeningChallenges } from "@/data/ai-responses";
+import { CalibrationCheck } from "./calibration-check";
+import { CarryLine } from "./carry-line";
+import { ConversationRehearsal } from "./conversation-rehearsal";
+import { VoiceCapture } from "./voice-capture";
+import { SparkTextReveal } from "./spark-text-reveal";
+import { turn, ignite } from "@/lib/motion";
 
 const HONESTY_NUDGES = [
   "Write the honest answer, not the flattering one.",
   "You do not need to be noble here. Just accurate.",
   "Say it without softening it.",
   "The comfortable answer is probably not the true one.",
+  "Write the true answer first. Do not optimize for sounding smart.",
+  "Specific beats impressive.",
 ];
 
 function randomFrom<T>(arr: T[]): T {
@@ -35,8 +42,12 @@ export function ForgeSession() {
     draft,
     setCurrentStep,
     setDraftField,
+    setDraftCalibration,
+    setDraftAiResponse,
     completeSession,
+    clearDraft,
     advanceDay,
+    updateLastEntryCarry,
     getEntryForPrompt,
   } = useForgeStore();
 
@@ -45,8 +56,16 @@ export function ForgeSession() {
   const existingEntry = getEntryForPrompt(prompt.id);
   const step = FORGE_STEPS[currentStep];
   const [completed, setCompleted] = useState(false);
+  const [savedDistillation, setSavedDistillation] = useState("");
+  const [calibrated, setCalibrated] = useState(!!draft.calibration);
+  const [carrySaved, setCarrySaved] = useState(false);
+  const [savedCarryLine, setSavedCarryLine] = useState("");
   const [deepeningShown, setDeepeningShown] = useState(false);
   const [deepeningText, setDeepeningText] = useState("");
+  const [deepeningLoading, setDeepeningLoading] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -61,6 +80,20 @@ export function ForgeSession() {
     setDeepeningShown(false);
     setDeepeningText("");
   }, [currentStep]);
+
+  // Warn before navigating away with unsaved draft content
+  useEffect(() => {
+    const hasDraftContent =
+      draft.reflectionText || draft.extensionText || draft.distillationText || draft.applicationText;
+
+    if (!hasDraftContent || completed) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [draft, completed]);
 
   const fieldMap: Record<string, keyof typeof draft> = {
     reflect: "reflectionText",
@@ -77,7 +110,7 @@ export function ForgeSession() {
   };
 
   const currentField = fieldMap[step.key];
-  const currentValue = currentField ? draft[currentField] : "";
+  const currentValue = currentField ? (draft[currentField] as string) || "" : "";
   const currentPromptText = promptMap[step.key] || "";
 
   // For apply step, skip if no applicationPrompt
@@ -85,20 +118,20 @@ export function ForgeSession() {
   const effectiveLastStep = hasApplicationPrompt ? FORGE_STEPS.length - 1 : FORGE_STEPS.length - 2;
 
   const canGoNext =
-    currentStep === 0 || (currentField && draft[currentField].trim().length > 0);
+    (currentStep === 0 && calibrated) || (currentStep > 0 && currentValue.trim().length > 0);
 
   const isLastStep = currentStep === effectiveLastStep;
 
   const handleComplete = useCallback(() => {
+    setSavedDistillation(draft.distillationText);
     completeSession();
     setCompleted(true);
-  }, [completeSession]);
+  }, [completeSession, draft.distillationText]);
 
   const handleNext = useCallback(() => {
     if (isLastStep) {
       handleComplete();
     } else {
-      // Skip apply step if no applicationPrompt
       const nextStep = currentStep + 1;
       if (nextStep === 4 && !hasApplicationPrompt) {
         handleComplete();
@@ -115,15 +148,84 @@ export function ForgeSession() {
   }, [currentStep, setCurrentStep]);
 
   const handleContinue = useCallback(() => {
+    clearDraft();
     advanceDay();
     setCompleted(false);
     router.push("/daily-forge");
-  }, [advanceDay, router]);
+  }, [clearDraft, advanceDay, router]);
 
-  const handleDeepeningChallenge = useCallback(() => {
-    setDeepeningText(randomFrom(deepeningChallenges));
-    setDeepeningShown(true);
-  }, []);
+  const handleSpeak = useCallback(async (text: string) => {
+    if (audioLoading) return;
+    if (audioUrl) {
+      if (audioRef.current) {
+        if (audioRef.current.paused) {
+          audioRef.current.play();
+        } else {
+          audioRef.current.pause();
+        }
+      }
+      return;
+    }
+    setAudioLoading(true);
+    try {
+      const res = await fetch("/api/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.play();
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        setAudioUrl(null);
+        audioRef.current = null;
+      };
+    } catch {
+      console.error("Speech generation failed");
+    } finally {
+      setAudioLoading(false);
+    }
+  }, [audioLoading, audioUrl]);
+
+  // Real AI deepening challenge
+  const handleDeepeningChallenge = useCallback(async () => {
+    setDeepeningLoading(true);
+    try {
+      const res = await fetch("/api/challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userText: currentValue,
+          arcTitle: arc.title,
+          step: step.key,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setDeepeningText(data.result);
+    } catch {
+      setDeepeningText("What part of this answer is still edited for comfort? What would the version without self-protection sound like?");
+    } finally {
+      setDeepeningLoading(false);
+      setDeepeningShown(true);
+    }
+  }, [currentValue, arc.title, step.key]);
+
+  // Handle voice transcription — append to current field
+  const handleVoiceTranscription = useCallback(
+    (text: string) => {
+      if (!currentField) return;
+      const existing = (draft[currentField] as string) || "";
+      const newValue = existing ? `${existing} ${text}` : text;
+      setDraftField(currentField, newValue);
+    },
+    [currentField, draft, setDraftField]
+  );
 
   if (existingEntry && !completed) {
     return (
@@ -139,7 +241,7 @@ export function ForgeSession() {
               <span className="text-foreground">&quot;{prompt.title}&quot;</span>.
               Your insight has been saved to the vault.
             </p>
-            <div className="flex gap-3 justify-center pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center pt-2">
               <Button variant="outline" onClick={() => router.push("/vault")}>
                 View in Vault
               </Button>
@@ -162,8 +264,9 @@ export function ForgeSession() {
   if (completed) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        variants={ignite}
+        initial="hidden"
+        animate="visible"
         className="space-y-6"
       >
         <Card className="bg-card border-gold/20">
@@ -176,11 +279,56 @@ export function ForgeSession() {
               Your insight on &quot;{prompt.title}&quot; has been saved to your
               vault. Each session makes you sharper.
             </p>
-            <div className="flex gap-3 justify-center pt-2">
-              <Button variant="outline" onClick={() => router.push("/vault")}>
+            {savedDistillation && (
+              <div className="max-w-md mx-auto space-y-2">
+                <p className="text-sm text-foreground/80 italic border-l-2 border-gold/30 pl-3">
+                  &ldquo;{savedDistillation}&rdquo;
+                </p>
+                <button
+                  onClick={() => handleSpeak(savedDistillation)}
+                  disabled={audioLoading}
+                  aria-label={audioLoading ? "Generating audio" : audioUrl ? "Pause playback" : "Hear your distillation spoken aloud"}
+                  className="text-xs text-gold/50 hover:text-gold/80 transition-colors flex items-center gap-1.5 mx-auto"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {audioUrl ? (
+                      <>
+                        <rect x="6" y="4" width="4" height="16" />
+                        <rect x="14" y="4" width="4" height="16" />
+                      </>
+                    ) : (
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    )}
+                  </svg>
+                  {audioLoading ? "Generating..." : audioUrl ? "Playing" : "Hear it spoken"}
+                </button>
+              </div>
+            )}
+
+            {/* Carry line — saves directly to the completed entry */}
+            {!carrySaved ? (
+              <div className="max-w-md mx-auto w-full text-left">
+                <CarryLine
+                  onSave={(line, action) => {
+                    updateLastEntryCarry(line, action);
+                    setSavedCarryLine(line);
+                    setCarrySaved(true);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="max-w-md mx-auto">
+                <p className="text-xs text-muted-foreground/50">
+                  Carrying: <span className="text-foreground/60">{savedCarryLine}</span>
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center pt-2">
+              <Button variant="outline" onClick={() => { clearDraft(); router.push("/vault"); }}>
                 View in Vault
               </Button>
-              <Button variant="outline" onClick={() => router.push("/")}>
+              <Button variant="outline" onClick={() => { clearDraft(); router.push("/"); }}>
                 Dashboard
               </Button>
               <Button
@@ -200,7 +348,7 @@ export function ForgeSession() {
     <div className={cn("space-y-6", isDay5 && "max-w-2xl mx-auto")}>
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-1 flex-wrap">
           <span className={cn(isDay5 ? "text-ember" : "text-gold/70")}>
             {arc.title}
           </span>
@@ -209,7 +357,7 @@ export function ForgeSession() {
           <Badge
             variant="outline"
             className={cn(
-              "text-[10px] capitalize ml-1",
+              "text-[10px] capitalize",
               isDay5 ? "border-ember/30 text-ember/70" : "border-border/40"
             )}
           >
@@ -217,12 +365,11 @@ export function ForgeSession() {
           </Badge>
         </div>
         <h1 className={cn(
-          "font-display text-2xl font-semibold",
+          "font-display text-xl sm:text-2xl font-semibold",
           isDay5 && "text-foreground"
         )}>
           {prompt.title}
         </h1>
-        {/* Day 5 intro signal */}
         {isDay5 && currentStep === 0 && (
           <motion.p
             initial={{ opacity: 0 }}
@@ -235,7 +382,7 @@ export function ForgeSession() {
         )}
       </div>
 
-      {/* Tension note - shown on spark step */}
+      {/* Tension note */}
       {currentStep === 0 && prompt.tensionNote && (
         <div className={cn(
           "text-xs px-3 py-2 rounded-md",
@@ -257,10 +404,10 @@ export function ForgeSession() {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
+          variants={turn}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
         >
           <Card className={cn(
             "bg-card",
@@ -280,19 +427,32 @@ export function ForgeSession() {
               </div>
 
               {currentStep === 0 ? (
-                /* Spark step - display the idea */
+                /* Spark step - calibration then idea */
                 <div className="space-y-4">
-                  <div className={cn(
-                    "text-base leading-relaxed whitespace-pre-wrap",
-                    isDay5 ? "text-foreground" : "text-foreground/90"
-                  )}>
-                    {prompt.sparkText}
-                  </div>
-                  <p className="text-sm text-muted-foreground italic">
-                    {isDay5
-                      ? "Sit with this before you respond. When you're ready, continue."
-                      : "Read the passage above. When you\u2019re ready, continue to reflect."}
-                  </p>
+                  {!calibrated && (
+                    <CalibrationCheck
+                      onComplete={(cal) => {
+                        setDraftCalibration(cal);
+                        setCalibrated(true);
+                      }}
+                    />
+                  )}
+                  {calibrated && (
+                    <>
+                      <SparkTextReveal
+                        text={prompt.sparkText}
+                        className={cn(
+                          isDay5 ? "text-foreground" : "text-foreground/90"
+                        )}
+                        charDelay={isDay5 ? 40 : 30}
+                      />
+                      <p className="text-sm text-muted-foreground italic">
+                        {isDay5
+                          ? "Sit with this before you respond. When you're ready, continue."
+                          : "Read the passage above. When you\u2019re ready, continue to reflect."}
+                      </p>
+                    </>
+                  )}
                 </div>
               ) : (
                 /* Writing steps */
@@ -319,7 +479,7 @@ export function ForgeSession() {
                         : "Write your thoughts here..."
                     }
                     className={cn(
-                      "min-h-[160px] bg-background resize-none text-base leading-relaxed",
+                      "min-h-[200px] bg-background resize-none text-base leading-relaxed",
                       isDay5
                         ? "border-ember/20 focus:border-ember/40"
                         : "border-border/40 focus:border-gold/40"
@@ -329,14 +489,46 @@ export function ForgeSession() {
                       setDraftField(currentField, e.target.value)
                     }
                   />
-                  {currentValue && (
-                    <p className="text-xs text-muted-foreground text-right">
-                      {currentValue.length} characters
-                    </p>
+
+                  {/* Voice capture + character count row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <VoiceCapture onTranscription={handleVoiceTranscription} />
+                      {step.key === "distill" && currentValue.trim().length > 10 && (
+                        <button
+                          onClick={() => handleSpeak(currentValue)}
+                          disabled={audioLoading}
+                          aria-label={audioLoading ? "Generating audio" : audioUrl ? "Pause playback" : "Say it aloud"}
+                          className="text-xs text-gold/50 hover:text-gold/80 transition-colors flex items-center gap-1.5"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            {audioUrl ? (
+                              <>
+                                <rect x="6" y="4" width="4" height="16" />
+                                <rect x="14" y="4" width="4" height="16" />
+                              </>
+                            ) : (
+                              <polygon points="5 3 19 12 5 21 5 3" />
+                            )}
+                          </svg>
+                          {audioLoading ? "Generating..." : audioUrl ? "Playing" : "Say it aloud"}
+                        </button>
+                      )}
+                    </div>
+                    {currentValue && (
+                      <p className="text-xs text-muted-foreground">
+                        {currentValue.length} characters
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Conversation rehearsal on distill step */}
+                  {step.key === "distill" && currentValue.trim().length > 10 && (
+                    <ConversationRehearsal text={currentValue} />
                   )}
 
-                  {/* Deepening challenge for Tier 3 — shown after user writes something */}
-                  {isDay5 && currentValue.trim().length > 50 && !deepeningShown && (
+                  {/* Deepening challenge — real AI, available on all days with 50+ chars */}
+                  {currentValue.trim().length > 50 && !deepeningShown && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -344,9 +536,22 @@ export function ForgeSession() {
                     >
                       <button
                         onClick={handleDeepeningChallenge}
-                        className="text-xs text-ember/40 hover:text-ember/70 transition-colors italic"
+                        disabled={deepeningLoading}
+                        className={cn(
+                          "text-xs transition-colors italic flex items-center gap-1.5",
+                          isDay5
+                            ? "text-ember/40 hover:text-ember/70"
+                            : "text-gold/40 hover:text-gold/70"
+                        )}
                       >
-                        Go deeper &rarr;
+                        {deepeningLoading ? (
+                          <>
+                            <div className="h-3 w-3 animate-spin rounded-full border border-gold/30 border-t-gold" />
+                            Thinking...
+                          </>
+                        ) : (
+                          "Go deeper \u2192"
+                        )}
                       </button>
                     </motion.div>
                   )}
@@ -355,7 +560,12 @@ export function ForgeSession() {
                     <motion.div
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-xs text-ember/60 italic border-l-2 border-ember/20 pl-3 py-1"
+                      className={cn(
+                        "text-xs italic border-l-2 pl-3 py-1",
+                        isDay5
+                          ? "text-ember/60 border-ember/20"
+                          : "text-gold/60 border-gold/20"
+                      )}
                     >
                       {deepeningText}
                     </motion.div>
@@ -376,13 +586,17 @@ export function ForgeSession() {
           <AiToolsPanel
             arcTitle={arc.title}
             userText={currentValue}
+            step={step.key}
+            onSaveChallenge={(text) => setDraftAiResponse("aiChallenge", text)}
+            onSaveRefinement={(text) => setDraftAiResponse("aiRefinement", text)}
+            onSaveConversation={(text) => setDraftAiResponse("conversationVersion", text)}
           />
         </motion.div>
       )}
 
       {/* Emotional goal — subtle footer */}
       {prompt.emotionalGoal && currentStep === 0 && (
-        <p className="text-[11px] text-muted-foreground/40 text-center">
+        <p className="text-[11px] text-muted-foreground/60 text-center">
           {prompt.emotionalGoal}
         </p>
       )}

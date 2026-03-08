@@ -51,8 +51,67 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Mind Forge — Dark, warm, intelligent theme */
+/* ── Typography Scale (minor third 1.2) ── */
 :root {
+  --text-xs: 0.694rem;    /* 11.1px */
+  --text-sm: 0.833rem;    /* 13.3px */
+  --text-base: 1rem;      /* 16px */
+  --text-md: 1.2rem;      /* 19.2px */
+  --text-lg: 1.44rem;     /* 23px */
+  --text-xl: 1.728rem;    /* 27.6px */
+  --text-2xl: 2.074rem;   /* 33.2px */
+  --text-3xl: 2.488rem;   /* 39.8px */
+
+  /* Spacing rhythm */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-section: 3rem;
+  --space-page: 4rem;
+}
+
+/* Mind Forge — Warm, intelligent theme */
+:root {
+  --background: oklch(0.97 0.005 70);
+  --foreground: oklch(0.18 0.01 60);
+  --card: oklch(0.99 0.003 70);
+  --card-foreground: oklch(0.18 0.01 60);
+  --popover: oklch(0.99 0.003 70);
+  --popover-foreground: oklch(0.18 0.01 60);
+  --primary: oklch(0.55 0.12 55);
+  --primary-foreground: oklch(0.98 0.005 70);
+  --secondary: oklch(0.93 0.01 70);
+  --secondary-foreground: oklch(0.25 0.01 60);
+  --muted: oklch(0.93 0.008 70);
+  --muted-foreground: oklch(0.45 0.02 60);
+  --accent: oklch(0.9 0.02 70);
+  --accent-foreground: oklch(0.18 0.01 60);
+  --destructive: oklch(0.55 0.22 27);
+  --border: oklch(0.88 0.01 70);
+  --input: oklch(0.91 0.01 70);
+  --ring: oklch(0.55 0.12 55);
+  --ember: oklch(0.6 0.18 40);
+  --gold: oklch(0.55 0.12 55);
+  --bronze: oklch(0.5 0.1 60);
+  --chart-1: oklch(0.55 0.12 55);
+  --chart-2: oklch(0.6 0.18 40);
+  --chart-3: oklch(0.5 0.1 60);
+  --chart-4: oklch(0.5 0.08 250);
+  --chart-5: oklch(0.45 0.06 300);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.95 0.005 70);
+  --sidebar-foreground: oklch(0.25 0.01 60);
+  --sidebar-primary: oklch(0.55 0.12 55);
+  --sidebar-primary-foreground: oklch(0.98 0.005 70);
+  --sidebar-accent: oklch(0.91 0.01 70);
+  --sidebar-accent-foreground: oklch(0.18 0.01 60);
+  --sidebar-border: oklch(0.88 0.01 70);
+  --sidebar-ring: oklch(0.55 0.12 55);
+}
+
+.dark {
   --background: oklch(0.13 0.005 60);
   --foreground: oklch(0.9 0.01 70);
   --card: oklch(0.17 0.006 60);
@@ -64,7 +123,7 @@
   --secondary: oklch(0.22 0.008 60);
   --secondary-foreground: oklch(0.85 0.01 70);
   --muted: oklch(0.22 0.008 60);
-  --muted-foreground: oklch(0.6 0.02 60);
+  --muted-foreground: oklch(0.65 0.02 60);
   --accent: oklch(0.28 0.02 60);
   --accent-foreground: oklch(0.9 0.01 70);
   --destructive: oklch(0.58 0.22 27);
@@ -79,7 +138,6 @@
   --chart-3: oklch(0.6 0.1 60);
   --chart-4: oklch(0.5 0.08 250);
   --chart-5: oklch(0.45 0.06 300);
-  --radius: 0.75rem;
   --sidebar: oklch(0.11 0.005 60);
   --sidebar-foreground: oklch(0.85 0.01 70);
   --sidebar-primary: oklch(0.75 0.1 75);
@@ -99,10 +157,21 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
 }
 
-/* Custom scrollbar */
+/* Selection color — warm parchment tint */
+::selection {
+  background: oklch(0.55 0.12 55 / 0.2);
+  color: oklch(0.15 0.01 60);
+}
+.dark ::selection {
+  background: oklch(0.75 0.1 75 / 0.15);
+  color: oklch(0.95 0.01 70);
+}
+
+/* Custom scrollbar — warm tones */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -110,19 +179,288 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.3 0.01 60);
+  background: oklch(0.78 0.02 60);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.4 0.01 60);
+  background: oklch(0.68 0.03 55);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.28 0.02 55);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.38 0.03 55);
 }
 
-/* Ember glow animation for streaks */
+/* Ember glow animation for streaks — slow, breathing rhythm */
 @keyframes ember-glow {
   0%, 100% { opacity: 0.6; filter: brightness(1); }
-  50% { opacity: 1; filter: brightness(1.3); }
+  50% { opacity: 1; filter: brightness(1.2); }
 }
 
 .ember-glow {
-  animation: ember-glow 2s ease-in-out infinite;
+  animation: ember-glow 3s ease-in-out infinite;
+}
+
+/* Subtle pulse for active indicators */
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.gentle-pulse {
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+/* Step indicator pulse — warm box-shadow throb */
+@keyframes step-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.55 0.12 55 / 0.15); }
+  50% { box-shadow: 0 0 0 4px oklch(0.55 0.12 55 / 0.06); }
+}
+.dark .step-pulse {
+  --step-pulse-color: oklch(0.75 0.1 75 / 0.1);
+}
+.step-pulse {
+  animation: step-pulse 2.5s ease-in-out infinite;
+}
+
+/* Spark text character reveal */
+@keyframes spark-char-reveal {
+  0% { opacity: 0; filter: blur(4px); color: oklch(0.7 0.18 40); }
+  40% { opacity: 1; filter: blur(0); color: oklch(0.65 0.14 50); }
+  100% { opacity: 1; filter: blur(0); color: inherit; }
+}
+
+/* Progress bar fill with warmth */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+
+/* Card lift on hover — longer easing, inset highlight */
+.card-hover {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: oklch(0.55 0.12 55 / 0.15);
+  box-shadow:
+    0 4px 20px oklch(0.55 0.12 55 / 0.06),
+    0 1px 3px oklch(0 0 0 / 0.04),
+    inset 0 1px 0 oklch(1 0 0 / 0.04);
+}
+.dark .card-hover:hover {
+  border-color: oklch(0.75 0.1 75 / 0.15);
+  box-shadow:
+    0 4px 20px oklch(0.75 0.1 75 / 0.04),
+    0 1px 3px oklch(0 0 0 / 0.15),
+    inset 0 1px 0 oklch(1 0 0 / 0.02);
+}
+
+/* ── Shadow System (3 tiers) ── */
+.shadow-rest {
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.04), 0 0 0 1px oklch(0 0 0 / 0.02);
+}
+.shadow-lifted {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.06), 0 1px 3px oklch(0 0 0 / 0.04);
+}
+.shadow-elevated {
+  box-shadow: 0 8px 30px oklch(0 0 0 / 0.08), 0 2px 6px oklch(0 0 0 / 0.04);
+}
+.dark .shadow-rest {
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.15), 0 0 0 1px oklch(0 0 0 / 0.1);
+}
+.dark .shadow-lifted {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.2), 0 1px 3px oklch(0 0 0 / 0.12);
+}
+.dark .shadow-elevated {
+  box-shadow: 0 8px 30px oklch(0 0 0 / 0.3), 0 2px 6px oklch(0 0 0 / 0.15);
+}
+
+/* Focus visible ring for accessibility */
+:focus-visible {
+  outline: 2px solid oklch(0.55 0.12 55 / 0.5);
+  outline-offset: 2px;
+}
+
+/* Input & textarea focus glow — warm expansion */
+textarea:focus,
+input[type="text"]:focus,
+input[type="search"]:focus {
+  box-shadow: 0 0 0 1px oklch(0.55 0.12 55 / 0.25), 0 0 12px oklch(0.55 0.12 55 / 0.06);
+  border-color: oklch(0.55 0.12 55 / 0.3);
+}
+.dark textarea:focus,
+.dark input[type="text"]:focus,
+.dark input[type="search"]:focus {
+  box-shadow: 0 0 0 1px oklch(0.75 0.1 75 / 0.2), 0 0 12px oklch(0.75 0.1 75 / 0.05);
+  border-color: oklch(0.75 0.1 75 / 0.3);
+}
+
+/* Smooth font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display heading — architectural typography */
+.display-heading {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/* Section heading style */
+.section-heading {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* Link ember — underline that warms on hover */
+.link-ember {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.link-ember::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 0;
+  height: 1px;
+  background: oklch(0.55 0.12 55 / 0.6);
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-ember:hover::after {
+  width: 100%;
+}
+.dark .link-ember::after {
+  background: oklch(0.75 0.1 75 / 0.5);
+}
+
+/* Badge hover */
+.badge-interactive {
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.badge-interactive:hover {
+  background: oklch(0.88 0.02 70);
+}
+.dark .badge-interactive:hover {
+  background: oklch(0.28 0.02 60);
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: oklch(0.55 0.12 55);
+  color: oklch(0.98 0.005 70);
+  border-radius: 0 0 0.5rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Reduced motion: disable all animations for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .ember-glow,
+  .gentle-pulse {
+    animation: none;
+  }
+
+  .card-hover:hover {
+    transform: none;
+  }
+}
+
+/* Prose max-width for comfortable reading */
+.prose-width {
+  max-width: 65ch;
+}
+
+/* Page content entrance */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: page-enter 0.3s ease-out;
+}
+
+/* Gold shimmer for premium actions */
+@keyframes gold-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.gold-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.55 0.12 55 / 0.9) 0%,
+    oklch(0.65 0.14 65 / 1) 50%,
+    oklch(0.55 0.12 55 / 0.9) 100%
+  );
+  background-size: 200% 100%;
+}
+.gold-shimmer:hover {
+  animation: gold-shimmer 1.5s ease infinite;
+  box-shadow: 0 0 20px oklch(0.55 0.12 55 / 0.15);
+}
+.dark .gold-shimmer:hover {
+  box-shadow: 0 0 20px oklch(0.75 0.1 75 / 0.1);
+}
+
+/* Decorative quotation ornament */
+.quote-ornament::before {
+  content: "\201C";
+  display: block;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1;
+  color: oklch(0.55 0.12 55 / 0.15);
+  margin-bottom: -0.5rem;
+}
+.dark .quote-ornament::before {
+  color: oklch(0.75 0.1 75 / 0.12);
+}
+
+/* Stat number — display-weight for impact */
+.stat-number {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Favorited left border accent */
+.favorited-accent {
+  border-left: 2px solid oklch(0.55 0.12 55 / 0.4);
+}
+.dark .favorited-accent {
+  border-left: 2px solid oklch(0.75 0.1 75 / 0.3);
+}
+
+/* Mobile safe areas */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

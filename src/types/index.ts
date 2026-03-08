@@ -54,15 +54,26 @@ export interface DailyPrompt {
   tags: string[];
 }
 
+export interface Calibration {
+  energy: number;    // 1-5
+  clarity: number;   // 1-5
+  mood: number;      // 1-5
+}
+
+export type CarryAction = "notice" | "say" | "decide" | "stop" | "build" | "write";
+
 export interface ForgeEntry {
   id: string;
   dailyPromptId: string;
   weeklyArcId: string;
   date: string;
+  calibration?: Calibration;
   reflectionText: string;
   extensionText: string;
   distillationText: string;
   applicationText: string;
+  carryLine?: string;
+  carryAction?: CarryAction;
   aiRefinement?: string;
   aiChallenge?: string;
   conversationVersion?: string;
@@ -71,6 +82,13 @@ export interface ForgeEntry {
   completed: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface QuickCapture {
+  id: string;
+  text: string;
+  type: "insight" | "line" | "pattern" | "truth";
+  createdAt: string;
 }
 
 export interface WeeklyReview {

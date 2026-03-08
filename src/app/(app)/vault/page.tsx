@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useForgeStore } from "@/store/forge-store";
 import { weeklyArcs } from "@/data/weekly-arcs";
 import { TAGS } from "@/types";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/layout/page-header";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { settle } from "@/lib/motion";
 import { ForgeEntry } from "@/types";
 
 export default function VaultPage() {
@@ -114,22 +116,35 @@ export default function VaultPage() {
 
       {/* Results */}
       {filteredEntries.length === 0 ? (
-        <Card className="bg-card border-border/30">
-          <CardContent className="pt-12 pb-12 text-center">
+        <Card className="bg-card border-border/30 border-dashed">
+          <CardContent className="pt-14 pb-14 text-center">
             {entries.length === 0 ? (
-              <div className="space-y-2">
-                <p className="text-muted-foreground">
-                  Your vault is empty.
+              <div className="space-y-3">
+                <div className="text-muted-foreground/25 mx-auto w-fit">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7l10-4 10 4-10 4z" /><path d="M2 17l10 4 10-4" /><path d="M2 12l10 4 10-4" /></svg>
+                </div>
+                <p className="text-muted-foreground font-medium">
+                  Your vault is empty
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground/70">
                   Complete forge sessions to start building your collection of
                   insights.
                 </p>
+                <Link href="/daily-forge">
+                  <Button className="bg-gold/90 hover:bg-gold text-primary-foreground mt-2">
+                    Start Your First Forge &rarr;
+                  </Button>
+                </Link>
               </div>
             ) : (
-              <p className="text-muted-foreground">
-                No entries match your filters.
-              </p>
+              <div className="space-y-2">
+                <div className="text-muted-foreground/25 mx-auto w-fit">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                </div>
+                <p className="text-muted-foreground">
+                  No entries match your filters.
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -143,12 +158,12 @@ export default function VaultPage() {
             return (
               <motion.div
                 key={entry.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: i * 0.03 }}
+                variants={settle}
+                initial="hidden"
+                animate="visible"
               >
                 <Card
-                  className="bg-card border-border/30 hover:border-border/60 transition-colors cursor-pointer"
+                  className={cn("bg-card border-border/30 card-hover cursor-pointer", entry.favorited && "favorited-accent")}
                   onClick={() => setSelectedEntry(entry)}
                 >
                   <CardContent className="pt-4 pb-4">
@@ -182,8 +197,9 @@ export default function VaultPage() {
                           e.stopPropagation();
                           toggleFavorite(entry.id);
                         }}
+                        aria-label={entry.favorited ? "Remove from favorites" : "Add to favorites"}
                         className={cn(
-                          "text-lg transition-colors shrink-0",
+                          "text-lg transition-colors shrink-0 p-1",
                           entry.favorited
                             ? "text-gold"
                             : "text-muted-foreground hover:text-gold/60"
@@ -232,7 +248,7 @@ function EntryDetail({
 }: {
   entry: ForgeEntry;
   onToggleFavorite: () => void;
-  info: ReturnType<typeof getInfo> | null;
+  info: { arc: (typeof weeklyArcs)[0]; prompt: (typeof weeklyArcs)[0]["dailyPrompts"][0] } | null;
 }) {
   return (
     <>
@@ -259,8 +275,9 @@ function EntryDetail({
           </div>
           <button
             onClick={onToggleFavorite}
+            aria-label={entry.favorited ? "Remove from favorites" : "Add to favorites"}
             className={cn(
-              "text-xl transition-colors",
+              "text-xl transition-colors p-1",
               entry.favorited ? "text-gold" : "text-muted-foreground"
             )}
           >
@@ -342,7 +359,3 @@ function Section({
     </div>
   );
 }
-
-// Helper type for getPromptForEntry return
-type ArcPromptInfo = { arc: (typeof weeklyArcs)[0]; prompt: (typeof weeklyArcs)[0]["dailyPrompts"][0] };
-function getInfo(_entry: ForgeEntry): ArcPromptInfo | null { return null; }

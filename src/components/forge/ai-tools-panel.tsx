@@ -3,15 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  getMockChallenge,
-  getMockRefinement,
-  getMockConversationVersion,
-} from "@/data/ai-responses";
+import { motion } from "framer-motion";
 
 interface AiToolsPanelProps {
   arcTitle: string;
   userText: string;
+  step?: string;
   onSaveRefinement?: (text: string) => void;
   onSaveChallenge?: (text: string) => void;
   onSaveConversation?: (text: string) => void;
@@ -22,6 +19,7 @@ type AiAction = "challenge" | "refine" | "conversation" | null;
 export function AiToolsPanel({
   arcTitle,
   userText,
+  step,
   onSaveRefinement,
   onSaveChallenge,
   onSaveConversation,
@@ -30,31 +28,53 @@ export function AiToolsPanel({
   const [response, setResponse] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  const handleAction = (action: AiAction) => {
-    if (!userText.trim()) return;
+  const handleAction = async (action: AiAction) => {
+    if (!userText.trim() || loading) return;
     setActiveAction(action);
     setLoading(true);
     setResponse("");
 
-    setTimeout(() => {
+    try {
       let result = "";
-      switch (action) {
-        case "challenge":
-          result = getMockChallenge(arcTitle, userText);
-          onSaveChallenge?.(result);
-          break;
-        case "refine":
-          result = getMockRefinement(userText);
-          onSaveRefinement?.(result);
-          break;
-        case "conversation":
-          result = getMockConversationVersion(userText);
-          onSaveConversation?.(result);
-          break;
+
+      if (action === "challenge") {
+        const res = await fetch("/api/challenge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userText, arcTitle, step }),
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        result = data.result;
+        onSaveChallenge?.(result);
+      } else if (action === "refine") {
+        const res = await fetch("/api/refine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userText }),
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        result = data.result;
+        onSaveRefinement?.(result);
+      } else if (action === "conversation") {
+        const res = await fetch("/api/rehearse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: userText, style: "casual" }),
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        result = data.result;
+        onSaveConversation?.(result);
       }
+
       setResponse(result);
+    } catch {
+      setResponse("Something went wrong. Try again.");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   const actions = [
@@ -111,25 +131,40 @@ export function AiToolsPanel({
       </div>
 
       {loading && (
-        <div className="rounded-lg bg-muted/50 p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-lg bg-muted/50 p-4"
+        >
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
             Thinking...
           </div>
-        </div>
+        </motion.div>
       )}
 
       {response && !loading && (
-        <div className="rounded-lg bg-muted/50 border border-border/50 p-4 space-y-2">
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-lg bg-muted/50 border border-border/50 p-4 space-y-2"
+        >
           <div className="flex items-center gap-2 text-xs font-medium text-gold/80 uppercase tracking-wider">
             {activeAction === "challenge" && "Challenge"}
             {activeAction === "refine" && "Refinement"}
             {activeAction === "conversation" && "Conversation Version"}
           </div>
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">
+          <div className="text-sm leading-relaxed whitespace-pre-wrap prose-width">
             {response}
           </div>
-        </div>
+          <button
+            onClick={() => navigator.clipboard.writeText(response)}
+            aria-label="Copy AI response to clipboard"
+            className="text-[10px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
+          >
+            Copy
+          </button>
+        </motion.div>
       )}
     </div>
   );

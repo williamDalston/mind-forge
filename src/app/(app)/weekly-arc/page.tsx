@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { settle } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 export default function WeeklyArcPage() {
@@ -60,7 +61,7 @@ export default function WeeklyArcPage() {
               7 days completed
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {arc.dailyPrompts.map((prompt, i) => {
               const isDay5 = prompt.depthTier === 3;
               const completed = completedIds.has(prompt.id);
@@ -69,7 +70,7 @@ export default function WeeklyArcPage() {
                   <div className="flex flex-col items-center gap-1 flex-1">
                     <div
                       className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors",
+                        "w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-medium transition-colors",
                         completed
                           ? isDay5 ? "bg-ember text-primary-foreground" : "bg-gold text-primary-foreground"
                           : i === currentDayIndex
@@ -86,7 +87,7 @@ export default function WeeklyArcPage() {
                       )}
                     </div>
                     <span className={cn(
-                      "text-[10px] leading-tight text-center",
+                      "text-[9px] sm:text-[10px] leading-tight text-center hidden sm:block",
                       i === currentDayIndex
                         ? isDay5 ? "text-ember/70" : "text-gold/70"
                         : "text-muted-foreground/50"
@@ -97,7 +98,7 @@ export default function WeeklyArcPage() {
                   {i < arc.dailyPrompts.length - 1 && (
                     <div
                       className={cn(
-                        "flex-1 h-0.5 mx-0.5 mb-4",
+                        "flex-1 h-0.5 mx-0.5 mb-0 sm:mb-4",
                         completed ? isDay5 ? "bg-ember/50" : "bg-gold/50" : "bg-muted"
                       )}
                     />
@@ -107,7 +108,7 @@ export default function WeeklyArcPage() {
             })}
           </div>
           {/* Depth tier labels */}
-          <div className="flex justify-between text-[10px] text-muted-foreground/40 px-2">
+          <div className="hidden sm:flex justify-between text-[10px] text-muted-foreground/40 px-2">
             <span>safe observation</span>
             <span className="text-ember/40">the turn</span>
             <span>integration</span>
@@ -126,13 +127,13 @@ export default function WeeklyArcPage() {
           return (
             <motion.div
               key={prompt.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
+              variants={settle}
+              initial="hidden"
+              animate="visible"
             >
               <Card
                 className={cn(
-                  "bg-card transition-colors cursor-pointer hover:border-border/60",
+                  "bg-card cursor-pointer card-hover",
                   isDay5 ? "border-ember/15 hover:border-ember/30" : "border-border/30",
                   isCurrent && (isDay5 ? "border-ember/30" : "border-gold/30"),
                   isCompleted && "opacity-80"
