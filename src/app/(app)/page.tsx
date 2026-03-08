@@ -7,10 +7,32 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
 import { emerge, settle, stagger } from "@/lib/motion";
 import { QuickCaptureWidget } from "@/components/forge/quick-capture";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 import { StreakMilestone } from "@/components/forge/streak-milestone";
+
+function useAutoAdvance() {
+  const { currentArcIndex, currentDayIndex, entries, lastSessionDate, advanceDay } =
+    useForgeStore();
+  const advanced = useRef(false);
+
+  useEffect(() => {
+    if (advanced.current) return;
+    const today = new Date().toISOString().split("T")[0];
+    if (lastSessionDate === today) return; // already did a session today
+
+    const arc = weeklyArcs[currentArcIndex % weeklyArcs.length];
+    const prompt = arc.dailyPrompts[currentDayIndex % arc.dailyPrompts.length];
+    const alreadyCompleted = entries.some((e) => e.dailyPromptId === prompt.id);
+
+    if (alreadyCompleted) {
+      advanced.current = true;
+      advanceDay();
+    }
+  }, [currentArcIndex, currentDayIndex, entries, lastSessionDate, advanceDay]);
+}
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -68,6 +90,7 @@ function WeeklyProgress({
 }
 
 export default function Dashboard() {
+  useAutoAdvance();
   const { currentArcIndex, currentDayIndex, entries, streak, totalSessions, draft } =
     useForgeStore();
 

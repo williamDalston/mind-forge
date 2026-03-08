@@ -516,7 +516,7 @@ export function ForgeSession() {
                         className={cn(
                           isDay5 ? "text-foreground" : "text-foreground/90"
                         )}
-                        charDelay={isDay5 ? 40 : 30}
+                        charDelay={isDay5 ? 18 : 14}
                       />
                       <p className="text-sm text-muted-foreground italic">
                         {isDay5

@@ -26,7 +26,7 @@ const getReducedMotion = () =>
 export function SparkTextReveal({
   text,
   className,
-  charDelay = 30,
+  charDelay = 14,
   onComplete,
 }: SparkTextRevealProps) {
   const prefersReduced = useSyncExternalStore(
