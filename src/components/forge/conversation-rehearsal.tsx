@@ -16,6 +16,7 @@ export function ConversationRehearsal({ text }: { text: string }) {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeStyle, setActiveStyle] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const handleRehearsal = async (style: string) => {
     if (loading) return;
@@ -95,11 +96,18 @@ export function ConversationRehearsal({ text }: { text: string }) {
                     &ldquo;{result}&rdquo;
                   </p>
                   <button
-                    onClick={() => navigator.clipboard.writeText(result)}
+                    onClick={() => {
+                      navigator.clipboard.writeText(result);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
                     aria-label="Copy rehearsal to clipboard"
-                    className="text-[10px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
+                    className={cn(
+                      "text-[10px] transition-colors",
+                      copied ? "text-gold" : "text-muted-foreground/40 hover:text-muted-foreground/60"
+                    )}
                   >
-                    Copy
+                    {copied ? "Copied!" : "Copy"}
                   </button>
                 </motion.div>
               )}

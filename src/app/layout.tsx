@@ -3,6 +3,7 @@ import { DM_Sans, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { OfflineBanner } from "@/components/layout/offline-banner";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -166,6 +167,7 @@ export default function RootLayout({
         </a>
         <ThemeProvider>
           <AuthProvider>
+            <OfflineBanner />
             {children}
           </AuthProvider>
         </ThemeProvider>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -27,6 +27,13 @@ export function AiToolsPanel({
   const [activeAction, setActiveAction] = useState<AiAction>(null);
   const [response, setResponse] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(response);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [response]);
 
   const handleAction = async (action: AiAction) => {
     if (!userText.trim() || loading) return;
@@ -158,11 +165,14 @@ export function AiToolsPanel({
             {response}
           </div>
           <button
-            onClick={() => navigator.clipboard.writeText(response)}
+            onClick={handleCopy}
             aria-label="Copy AI response to clipboard"
-            className="text-[10px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
+            className={cn(
+              "text-[10px] transition-colors",
+              copied ? "text-gold" : "text-muted-foreground/40 hover:text-muted-foreground/60"
+            )}
           >
-            Copy
+            {copied ? "Copied!" : "Copy"}
           </button>
         </motion.div>
       )}

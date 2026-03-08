@@ -77,15 +77,28 @@ export default function VaultPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Idea Vault"
-        subtitle="Your archive of distilled thoughts, strongest reflections, and conversation-ready insights."
-      />
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <PageHeader
+          title="Idea Vault"
+          subtitle="Your archive of distilled thoughts, strongest reflections, and conversation-ready insights."
+        />
+        {filteredEntries.length > 0 && (
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="no-print text-xs text-muted-foreground hover:text-gold transition-colors flex items-center gap-1.5 shrink-0"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /></svg>
+            Print
+          </button>
+        )}
+      </div>
 
       {/* Search + Filters */}
       <div className="space-y-3">
         <Input
           placeholder="Search your insights..."
+          aria-label="Search insights"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="bg-background border-border/40 focus:border-gold/40"
@@ -132,16 +145,15 @@ export default function VaultPage() {
         <Card className="bg-card border-border/30 border-dashed">
           <CardContent className="pt-14 pb-14 text-center">
             {entries.length === 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="text-muted-foreground/25 mx-auto w-fit">
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7l10-4 10 4-10 4z" /><path d="M2 17l10 4 10-4" /><path d="M2 12l10 4 10-4" /></svg>
                 </div>
                 <p className="text-muted-foreground font-medium">
                   Your vault is empty
                 </p>
-                <p className="text-sm text-muted-foreground/70">
-                  Complete forge sessions to start building your collection of
-                  insights.
+                <p className="text-sm text-muted-foreground/70 max-w-sm mx-auto">
+                  The vault is where every distilled insight from your sessions lives. Complete your first Daily Forge to start building a searchable archive you can use in real conversations.
                 </p>
                 <Link href="/daily-forge">
                   <Button className="bg-gold/90 hover:bg-gold text-primary-foreground mt-2">
@@ -150,12 +162,15 @@ export default function VaultPage() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="text-muted-foreground/25 mx-auto w-fit">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
                 </div>
-                <p className="text-muted-foreground">
-                  No entries match your filters.
+                <p className="text-muted-foreground font-medium">
+                  No entries match your filters
+                </p>
+                <p className="text-sm text-muted-foreground/70">
+                  Try a different search term or clear the Favorites filter to see all insights.
                 </p>
               </div>
             )}
@@ -286,16 +301,30 @@ function EntryDetail({
               {new Date(entry.date).toLocaleDateString()}
             </span>
           </div>
-          <button
-            onClick={onToggleFavorite}
-            aria-label={entry.favorited ? "Remove from favorites" : "Add to favorites"}
-            className={cn(
-              "text-xl transition-colors p-1",
-              entry.favorited ? "text-gold" : "text-muted-foreground"
-            )}
-          >
-            {entry.favorited ? "\u2605" : "\u2606"}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                const text = (entry.distillationText || entry.reflectionText || "").trim();
+                if (text) navigator.clipboard.writeText(text);
+              }}
+              className="text-xs text-gold/60 hover:text-gold transition-colors flex items-center gap-1 p-1"
+              title="Copy portable insight"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+              Copy line
+            </button>
+            <button
+              onClick={onToggleFavorite}
+              aria-label={entry.favorited ? "Remove from favorites" : "Add to favorites"}
+              className={cn(
+                "text-xl transition-colors p-1",
+                entry.favorited ? "text-gold" : "text-muted-foreground"
+              )}
+            >
+              {entry.favorited ? "\u2605" : "\u2606"}
+            </button>
+          </div>
         </div>
 
         <Separator className="bg-border/30" />
@@ -321,6 +350,27 @@ function EntryDetail({
         )}
         {entry.conversationVersion && (
           <Section title="Conversation Version" text={entry.conversationVersion} muted />
+        )}
+
+        {(entry.distillationText || entry.reflectionText) && (
+          <div className="space-y-2 pt-2">
+            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Lenses
+            </h4>
+            <p className="text-xs text-muted-foreground/80">
+              Revisit this idea through different angles:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {["Psychological", "Strategic", "Philosophical", "Personal"].map((lens) => (
+                <span
+                  key={lens}
+                  className="px-2.5 py-1 rounded-md bg-muted/50 text-xs text-foreground/70 border border-border/40"
+                >
+                  {lens}
+                </span>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="flex flex-wrap gap-1.5 pt-2">
@@ -362,7 +412,7 @@ function Section({
       </h4>
       <p
         className={cn(
-          "text-sm leading-relaxed whitespace-pre-wrap",
+          "text-sm leading-relaxed whitespace-pre-wrap break-words",
           highlight && "text-foreground font-medium",
           muted && "text-muted-foreground"
         )}

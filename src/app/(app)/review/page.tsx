@@ -22,7 +22,7 @@ interface PatternAnalysis {
 export default function ReviewPage() {
   const { entries, currentArcIndex, streak, totalSessions } = useForgeStore();
 
-  const arc = weeklyArcs[currentArcIndex];
+  const arc = weeklyArcs[currentArcIndex % weeklyArcs.length];
   const arcEntries = entries.filter((e) => e.weeklyArcId === arc.id);
 
   // Weekly voice letter state
@@ -170,10 +170,22 @@ export default function ReviewPage() {
 
   return (
     <motion.div className="space-y-10" variants={stagger} initial="hidden" animate="visible">
-      <PageHeader
-        title="Forge Review"
-        subtitle="Track your intellectual growth and reflect on your journey."
-      />
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <PageHeader
+          title="Forge Review"
+          subtitle="Track your intellectual growth and reflect on your journey."
+        />
+        {(entries.length > 0 || arcEntries.length > 0) && (
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="no-print text-xs text-muted-foreground hover:text-gold transition-colors flex items-center gap-1.5 shrink-0"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /></svg>
+            Print
+          </button>
+        )}
+      </div>
 
       {/* Growth Stats */}
       <motion.div
@@ -249,7 +261,7 @@ export default function ReviewPage() {
               <h3 className="text-sm font-medium">Themes This Week</h3>
               {weeklyTags.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  Complete sessions to see your themes.
+                  Complete at least one session this week to see which themes (psychology, strategy, meaning, etc.) show up in your reflections.
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">

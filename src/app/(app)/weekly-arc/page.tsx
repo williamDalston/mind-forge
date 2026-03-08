@@ -21,14 +21,14 @@ export default function WeeklyArcPage() {
     setDay,
   } = useForgeStore();
 
-  const arc = weeklyArcs[currentArcIndex];
+  const arc = weeklyArcs[currentArcIndex % weeklyArcs.length];
   const completedIds = new Set(entries.map((e) => e.dailyPromptId));
 
   return (
     <div className="space-y-8">
       <PageHeader
         title={arc.title}
-        subtitle={arc.description}
+        subtitle={arc.description + " Each day builds on the last; by day 7 you'll have a full arc of reflection on this theme."}
       />
 
       {/* Arc selector */}
@@ -81,7 +81,7 @@ export default function WeeklyArcPage() {
                       )}
                     >
                       {completed ? (
-                        <span>&#10003;</span>
+                        <span aria-label="Completed">&#10003;</span>
                       ) : (
                         i + 1
                       )}

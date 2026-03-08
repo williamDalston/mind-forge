@@ -464,3 +464,26 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Print: hide nav/sidebar, show main content only */
+@media print {
+  aside,
+  nav[aria-label],
+  .skip-to-content,
+  button[title*="ocus"],
+  button[title*="Theme"],
+  .no-print {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+  }
+  body {
+    background: white;
+  }
+  .dark * {
+    color: inherit;
+    border-color: #ccc;
+    background: transparent;
+  }
+}

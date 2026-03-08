@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { motion } from "framer-motion";
 import { settle } from "@/lib/motion";
+import { exportAsJson, exportAsCsv } from "@/lib/export-data";
 
 export default function YourDataPage() {
   const { entries, reviews, captures, totalSessions, streak } = useForgeStore();
@@ -63,7 +64,7 @@ export default function YourDataPage() {
         <motion.div variants={settle} initial="hidden" animate="visible">
           <Card className="bg-card border-gold/15">
             <CardContent className="pt-5 pb-5 flex items-center gap-3">
-              <span className="text-2xl ember-glow">&#9632;</span>
+              <span className="text-2xl ember-glow" aria-hidden="true">&#9632;</span>
               <div>
                 <p className="text-2xl font-display font-semibold text-gold">
                   {streak} day{streak !== 1 ? "s" : ""} streak
@@ -106,6 +107,27 @@ export default function YourDataPage() {
       <motion.div variants={settle} initial="hidden" animate="visible">
         <Card className="bg-card border-border/30">
           <CardContent className="pt-6 pb-6">
+            <h2 className="font-display text-lg font-medium mb-2">Download your data</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Export all your insights, reviews, and quick captures. JSON includes everything; CSV is ideal for spreadsheets.
+            </p>
+            <div className="flex flex-wrap gap-2 mb-6">
+              <Button
+                variant="outline"
+                className="border-gold/30 text-gold"
+                onClick={() => exportAsJson(entries, reviews, captures)}
+              >
+                Download JSON
+              </Button>
+              <Button
+                variant="outline"
+                className="border-gold/30 text-gold"
+                onClick={() => exportAsCsv(entries)}
+              >
+                Download CSV (insights)
+              </Button>
+            </div>
+
             <h2 className="font-display text-lg font-medium mb-2">Where to see it all</h2>
             <p className="text-sm text-muted-foreground mb-4">
               <strong>Idea Vault</strong> — Search and browse every insight you&apos;ve distilled. Filter by tag or favorites.

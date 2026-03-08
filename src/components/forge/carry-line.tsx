@@ -44,6 +44,7 @@ export function CarryLine({
         value={line}
         onChange={(e) => setLine(e.target.value)}
         placeholder="The one thing worth remembering..."
+        aria-label="Carry line"
         className="w-full bg-background border border-border/40 rounded-lg px-3 py-2.5 text-sm focus:border-gold/40 focus:outline-none transition-colors"
         maxLength={200}
         autoFocus

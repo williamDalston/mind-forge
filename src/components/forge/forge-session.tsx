@@ -51,8 +51,8 @@ export function ForgeSession() {
     getEntryForPrompt,
   } = useForgeStore();
 
-  const arc = weeklyArcs[currentArcIndex];
-  const prompt = arc.dailyPrompts[currentDayIndex];
+  const arc = weeklyArcs[currentArcIndex % weeklyArcs.length];
+  const prompt = arc.dailyPrompts[currentDayIndex % arc.dailyPrompts.length];
   const existingEntry = getEntryForPrompt(prompt.id);
   const step = FORGE_STEPS[currentStep];
   const [completed, setCompleted] = useState(false);
@@ -66,8 +66,14 @@ export function ForgeSession() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
+  const [focusMode, setFocusMode] = useState(false);
+  const [showTips, setShowTips] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setShowTips(!localStorage.getItem("mind-forge-forge-tips-seen"));
+  }, []);
 
   // Day 5 (index 4) is "The Turn" — tier 3, confrontational
   const isDay5 = prompt.depthTier === 3;
@@ -146,6 +152,24 @@ export function ForgeSession() {
       setCurrentStep(currentStep - 1);
     }
   }, [currentStep, setCurrentStep]);
+
+  // Keyboard shortcuts: Cmd/Ctrl+Enter = next or complete, Escape = back
+  useEffect(() => {
+    if (completed) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleBack();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (canGoNext) handleNext();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [completed, canGoNext, handleNext, handleBack]);
 
   const handleContinue = useCallback(() => {
     clearDraft();
@@ -232,7 +256,7 @@ export function ForgeSession() {
       <div className="space-y-6">
         <Card className="bg-card border-border/50">
           <CardContent className="pt-6 text-center space-y-4">
-            <div className="text-4xl">&#10003;</div>
+            <div className="text-4xl" aria-hidden="true">&#10003;</div>
             <h2 className="font-display text-xl font-semibold">
               Session Complete
             </h2>
@@ -284,8 +308,19 @@ export function ForgeSession() {
                 <p className="text-sm text-foreground/80 italic border-l-2 border-gold/30 pl-3">
                   &ldquo;{savedDistillation}&rdquo;
                 </p>
-                <button
-                  onClick={() => handleSpeak(savedDistillation)}
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(savedDistillation);
+                    }}
+                    className="text-xs text-gold/50 hover:text-gold/80 transition-colors flex items-center gap-1.5"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                    Copy for conversation
+                  </button>
+                  <button
+                    onClick={() => handleSpeak(savedDistillation)}
                   disabled={audioLoading}
                   aria-label={audioLoading ? "Generating audio" : audioUrl ? "Pause playback" : "Hear your distillation spoken aloud"}
                   className="text-xs text-gold/50 hover:text-gold/80 transition-colors flex items-center gap-1.5 mx-auto"
@@ -302,6 +337,7 @@ export function ForgeSession() {
                   </svg>
                   {audioLoading ? "Generating..." : audioUrl ? "Playing" : "Hear it spoken"}
                 </button>
+                </div>
               </div>
             )}
 
@@ -344,10 +380,18 @@ export function ForgeSession() {
     );
   }
 
-  return (
-    <div className={cn("space-y-6", isDay5 && "max-w-2xl mx-auto")}>
+  const stepTips: Record<string, string> = {
+    reflect: "What feels true here? No wrong answers.",
+    extend: "Add your own link: analogy, objection, or real-world connection.",
+    distill: "One clear line you could use in conversation.",
+    apply: "Where this shows up in your life or decisions.",
+  };
+
+  const sessionContent = (
+    <div className="space-y-6 max-w-2xl mx-auto">
       {/* Header */}
-      <div>
+      <div className="flex items-start justify-between gap-2">
+        <div>
         <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-1 flex-wrap">
           <span className={cn(isDay5 ? "text-ember" : "text-gold/70")}>
             {arc.title}
@@ -380,6 +424,15 @@ export function ForgeSession() {
             Today the lens turns inward.
           </motion.p>
         )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setFocusMode((f) => !f)}
+          className="text-xs text-muted-foreground hover:text-gold transition-colors shrink-0"
+          title={focusMode ? "Exit focus mode" : "Focus mode (hide distractions)"}
+        >
+          {focusMode ? "Exit focus" : "Focus"}
+        </button>
       </div>
 
       {/* Tension note */}
@@ -414,16 +467,35 @@ export function ForgeSession() {
             isDay5 ? "border-ember/15" : "border-border/50"
           )}>
             <CardContent className="pt-6 space-y-5">
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  "text-xs font-medium uppercase tracking-wider",
-                  isDay5 ? "text-ember/80" : "text-gold/80"
-                )}>
-                  {step.label}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  &mdash; {step.description}
-                </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "text-xs font-medium uppercase tracking-wider",
+                    isDay5 ? "text-ember/80" : "text-gold/80"
+                  )}>
+                    {step.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    &mdash; {step.description}
+                  </span>
+                </div>
+                {showTips && step.key !== "spark" && stepTips[step.key] && (
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-xs text-muted-foreground/80 bg-muted/30 px-2 py-1 rounded">
+                      Tip: {stepTips[step.key]}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.setItem("mind-forge-forge-tips-seen", "true");
+                        setShowTips(false);
+                      }}
+                      className="text-[10px] text-gold/70 hover:text-gold"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                )}
               </div>
 
               {currentStep === 0 ? (
@@ -479,7 +551,7 @@ export function ForgeSession() {
                         : "Write your thoughts here..."
                     }
                     className={cn(
-                      "min-h-[200px] bg-background resize-none text-base leading-relaxed",
+                      "min-h-[140px] sm:min-h-[200px] bg-background resize-none text-base leading-relaxed",
                       isDay5
                         ? "border-ember/20 focus:border-ember/40"
                         : "border-border/40 focus:border-gold/40"
@@ -628,4 +700,22 @@ export function ForgeSession() {
       </div>
     </div>
   );
+
+  if (focusMode) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
+        <div className="mx-auto max-w-2xl px-4 py-6">
+          <button
+            type="button"
+            onClick={() => setFocusMode(false)}
+            className="text-xs text-muted-foreground hover:text-gold mb-4"
+          >
+            Exit focus
+          </button>
+          {sessionContent}
+        </div>
+      </div>
+    );
+  }
+  return sessionContent;
 }

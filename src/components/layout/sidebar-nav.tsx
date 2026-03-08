@@ -7,6 +7,7 @@ import { useForgeStore } from "@/store/forge-store";
 import { weeklyArcs } from "@/data/weekly-arcs";
 import { UserMenu } from "./user-menu";
 import { ThemeToggle } from "./theme-toggle";
+import { SyncStatus } from "./sync-status";
 
 const navItems = [
   {
@@ -88,7 +89,7 @@ export function SidebarNav() {
   const pathname = usePathname();
   const { streak, currentArcIndex, currentDayIndex, entries } = useForgeStore();
 
-  const arc = weeklyArcs[currentArcIndex];
+  const arc = weeklyArcs[currentArcIndex % weeklyArcs.length];
   const arcEntries = entries.filter((e) => e.weeklyArcId === arc.id);
   const completedCount = arc.dailyPrompts.filter((p) =>
     arcEntries.some((e) => e.dailyPromptId === p.id)
@@ -104,7 +105,7 @@ export function SidebarNav() {
         <div className="flex items-center gap-3">
           {streak > 0 && (
             <span className="text-xs text-gold/70 flex items-center gap-1">
-              <span className="ember-glow text-sm">&#9632;</span>
+              <span className="ember-glow text-sm" aria-hidden="true">&#9632;</span>
               {streak}
             </span>
           )}
@@ -201,9 +202,12 @@ export function SidebarNav() {
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <UserMenu />
-            <ThemeToggle />
+          <div className="flex flex-col gap-2">
+            <SyncStatus />
+            <div className="flex items-center justify-between">
+              <UserMenu />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </aside>

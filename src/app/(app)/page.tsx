@@ -9,6 +9,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { emerge, settle, stagger } from "@/lib/motion";
 import { QuickCaptureWidget } from "@/components/forge/quick-capture";
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
+import { StreakMilestone } from "@/components/forge/streak-milestone";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -21,7 +23,7 @@ function StreakDisplay({ streak }: { streak: number }) {
   if (streak === 0) return null;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-2xl ember-glow">&#9632;</span>
+      <span className="text-2xl ember-glow" aria-hidden="true">&#9632;</span>
       <div>
         <span className="text-2xl font-semibold text-gold">{streak}</span>
         <span className="text-sm text-muted-foreground ml-1">
@@ -39,7 +41,7 @@ function WeeklyProgress({
   arcIndex: number;
   entries: { dailyPromptId: string }[];
 }) {
-  const arc = weeklyArcs[arcIndex];
+  const arc = weeklyArcs[arcIndex % weeklyArcs.length];
   const completedIds = new Set(entries.map((e) => e.dailyPromptId));
 
   return (
@@ -66,21 +68,26 @@ function WeeklyProgress({
 }
 
 export default function Dashboard() {
-  const { currentArcIndex, currentDayIndex, entries, streak, totalSessions } =
+  const { currentArcIndex, currentDayIndex, entries, streak, totalSessions, draft } =
     useForgeStore();
 
-  const arc = weeklyArcs[currentArcIndex];
-  const prompt = arc.dailyPrompts[currentDayIndex];
+  const arc = weeklyArcs[currentArcIndex % weeklyArcs.length];
+  const prompt = arc.dailyPrompts[currentDayIndex % arc.dailyPrompts.length];
   const recentEntries = [...entries].reverse().slice(0, 3);
   const arcEntries = entries.filter((e) => e.weeklyArcId === arc.id);
+  const hasDraft =
+    !!(draft?.reflectionText?.trim() || draft?.extensionText?.trim() || draft?.distillationText?.trim() || draft?.applicationText?.trim());
 
   return (
-    <motion.div
-      className="space-y-12"
-      variants={stagger}
-      initial="hidden"
-      animate="visible"
-    >
+    <>
+      <OnboardingModal />
+      <StreakMilestone streak={streak} />
+      <motion.div
+        className="space-y-12"
+        variants={stagger}
+        initial="hidden"
+        animate="visible"
+      >
       {/* Hero */}
       <motion.div variants={emerge}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -88,20 +95,38 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
               {getGreeting()}
             </p>
-            <h1 className="display-heading text-2xl sm:text-3xl font-semibold mt-0.5">
+            <h1 className="display-heading text-2xl sm:text-3xl font-semibold mt-0.5 hidden md:block">
               Mind Forge
             </h1>
             <p className="mt-1 text-sm sm:text-base text-muted-foreground">
               Turn ideas into mental strength, personal wisdom, and
               conversational brilliance.
             </p>
-            <p className="text-xs text-muted-foreground/60 mt-1">
-              By Will Alston
-            </p>
           </div>
           <StreakDisplay streak={streak} />
         </div>
       </motion.div>
+
+      {/* Resume session — when draft has content */}
+      {hasDraft && (
+        <motion.div variants={settle}>
+          <Card className="bg-card border-gold/20 overflow-hidden">
+            <CardContent className="pt-5 pb-5">
+              <p className="text-xs text-gold/70 uppercase tracking-wider mb-1">
+                In progress
+              </p>
+              <p className="text-sm text-foreground/90 mb-3">
+                You have an unfinished session. Pick up where you left off.
+              </p>
+              <Link href="/daily-forge">
+                <Button className="gold-shimmer text-primary-foreground">
+                  Continue today&apos;s session &rarr;
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Today's Theme + CTA */}
       <motion.div variants={settle}>
@@ -124,12 +149,13 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground mb-1">
               &ldquo;{prompt.title}&rdquo;
             </p>
-            <p className="text-sm text-foreground/70 line-clamp-2 mb-5">
-              {prompt.sparkText.slice(0, 180)}...
+            <p className="text-sm text-foreground/70 mb-5 prose-width">
+              {prompt.sparkText.slice(0, 320)}
+              {prompt.sparkText.length > 320 ? "…" : ""}
             </p>
             <Link href="/daily-forge">
               <Button className="gold-shimmer text-primary-foreground">
-                Start Today&apos;s Forge &rarr;
+                {hasDraft ? "Continue" : "Start today's forge"} &rarr;
               </Button>
             </Link>
           </CardContent>
@@ -251,8 +277,7 @@ export default function Dashboard() {
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7l10-4 10 4-10 4z" /><path d="M2 17l10 4 10-4" /><path d="M2 12l10 4 10-4" /></svg>
               </div>
               <p className="text-muted-foreground text-sm">
-                No insights yet. Complete your first forge session to start
-                building your vault.
+                Your strongest insights from each session will appear here. Complete your first Daily Forge to start building the list.
               </p>
             </CardContent>
           </Card>
@@ -296,5 +321,6 @@ export default function Dashboard() {
         )}
       </motion.div>
     </motion.div>
+    </>
   );
 }

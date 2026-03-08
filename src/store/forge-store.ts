@@ -317,11 +317,12 @@ export const useForgeStore = create<ForgeState>()(
 
       getEntryForPrompt: (promptId) => get().entries.find((e) => e.dailyPromptId === promptId),
 
-      getCurrentArc: () => weeklyArcs[get().currentArcIndex],
+      getCurrentArc: () => weeklyArcs[get().currentArcIndex % weeklyArcs.length],
 
       getCurrentPrompt: () => {
         const state = get();
-        return weeklyArcs[state.currentArcIndex].dailyPrompts[state.currentDayIndex];
+        const arc = weeklyArcs[state.currentArcIndex % weeklyArcs.length];
+        return arc.dailyPrompts[state.currentDayIndex % arc.dailyPrompts.length];
       },
     }),
     {
