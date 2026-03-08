@@ -95,6 +95,9 @@ export default function Dashboard() {
               Turn ideas into mental strength, personal wisdom, and
               conversational brilliance.
             </p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              By Will Alston
+            </p>
           </div>
           <StreakDisplay streak={streak} />
         </div>
@@ -260,7 +263,7 @@ export default function Dashboard() {
                 (a) => a.id === entry.weeklyArcId
               );
               return (
-                <Link key={entry.id} href="/vault">
+                <Link key={entry.id} href={`/vault?entry=${entry.id}`}>
                   <Card className="bg-card border-border/30 card-hover cursor-pointer">
                     <CardContent className="pt-4 pb-4">
                       <div className="flex items-start justify-between">

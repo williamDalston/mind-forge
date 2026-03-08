@@ -23,13 +23,16 @@ export const metadata: Metadata = {
     template: "%s | Will Alston — Mind Forge",
   },
   description:
-    "Will Alston is an analyst, builder, and strategist. Mind Forge is his daily intellectual training app for sharper thinking, deeper reflection, and conversational brilliance.",
+    "Will Alston (William Alston) is an analyst, builder, and strategist. Mind Forge is his daily intellectual training app for sharper thinking, deeper reflection, and conversational brilliance.",
   keywords: [
     "Will Alston",
     "William Alston",
     "Will Alston analyst",
     "Will Alston builder",
     "Will Alston strategist",
+    "William Alston analyst",
+    "William Alston builder",
+    "William Alston strategist",
     "willalston.space",
     "Mind Forge",
     "daily intellectual training",
@@ -45,7 +48,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Will Alston — Mind Forge | Daily Intellectual Training",
     description:
-      "Will Alston is an analyst, builder, and strategist. Mind Forge is his daily intellectual training app — sharper thinking through structured daily reflection.",
+      "Will Alston (William Alston) is an analyst, builder, and strategist. Mind Forge is his daily intellectual training app — sharper thinking through structured daily reflection.",
     url: "https://willalston.space",
     siteName: "Will Alston — Mind Forge",
     type: "website",
@@ -55,7 +58,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Will Alston — Mind Forge | Daily Intellectual Training",
     description:
-      "Will Alston is an analyst, builder, and strategist. Mind Forge is his daily intellectual training app — sharper thinking through structured daily reflection.",
+      "Will Alston (William Alston) is an analyst, builder, and strategist. Mind Forge is his daily intellectual training app — sharper thinking through structured daily reflection.",
     creator: "@agape_will",
   },
   alternates: {

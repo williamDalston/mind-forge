@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForgeStore } from "@/store/forge-store";
 import { weeklyArcs } from "@/data/weekly-arcs";
 import { TAGS } from "@/types";
@@ -23,11 +24,23 @@ import { settle } from "@/lib/motion";
 import { ForgeEntry } from "@/types";
 
 export default function VaultPage() {
+  const searchParams = useSearchParams();
   const { entries, toggleFavorite } = useForgeStore();
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ForgeEntry | null>(null);
+
+  // Open entry sheet or favorites filter from URL
+  useEffect(() => {
+    const entryId = searchParams.get("entry");
+    const favorites = searchParams.get("favorites");
+    if (favorites === "1") setShowFavoritesOnly(true);
+    if (entryId && entries.length > 0) {
+      const entry = entries.find((e) => e.id === entryId);
+      if (entry) setSelectedEntry(entry);
+    }
+  }, [searchParams, entries]);
 
   const filteredEntries = useMemo(() => {
     let result = [...entries].reverse();
@@ -36,10 +49,10 @@ export default function VaultPage() {
       const q = search.toLowerCase();
       result = result.filter(
         (e) =>
-          e.distillationText.toLowerCase().includes(q) ||
-          e.reflectionText.toLowerCase().includes(q) ||
-          e.extensionText.toLowerCase().includes(q) ||
-          e.applicationText.toLowerCase().includes(q)
+          (e.distillationText ?? "").toLowerCase().includes(q) ||
+          (e.reflectionText ?? "").toLowerCase().includes(q) ||
+          (e.extensionText ?? "").toLowerCase().includes(q) ||
+          (e.applicationText ?? "").toLowerCase().includes(q)
       );
     }
 

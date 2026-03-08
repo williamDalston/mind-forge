@@ -60,9 +60,9 @@ export default function ReviewPage() {
   const bestDistillations = useMemo(
     () =>
       arcEntries
-        .filter((e) => e.distillationText.trim())
+        .filter((e) => (e.distillationText ?? "").trim())
         .map((e) => ({
-          text: e.distillationText,
+          text: e.distillationText ?? "",
           date: e.date,
           favorited: e.favorited,
           prompt: weeklyArcs

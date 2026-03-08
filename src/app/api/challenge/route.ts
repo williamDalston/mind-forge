@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUsageLimit, logUsage } from "@/lib/usage-tracking";
 
 export async function POST(request: NextRequest) {
   const { userText, arcTitle, step } = await request.json();
@@ -10,6 +11,11 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
+  }
+
+  const usage = await checkUsageLimit("challenge");
+  if (!usage.allowed) {
+    return NextResponse.json({ error: usage.error }, { status: 429 });
   }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -57,6 +63,8 @@ Rules:
 
   const data = await response.json();
   const result = data.choices?.[0]?.message?.content?.trim() || "";
+
+  if (usage.userId) await logUsage(usage.userId, "challenge");
 
   return NextResponse.json({ result });
 }

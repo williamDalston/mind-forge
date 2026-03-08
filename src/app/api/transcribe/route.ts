@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUsageLimit, logUsage } from "@/lib/usage-tracking";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
@@ -11,6 +12,11 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
+  }
+
+  const usage = await checkUsageLimit("transcribe");
+  if (!usage.allowed) {
+    return NextResponse.json({ error: usage.error }, { status: 429 });
   }
 
   const openaiForm = new FormData();
@@ -33,5 +39,8 @@ export async function POST(request: NextRequest) {
   }
 
   const data = await response.json();
+
+  if (usage.userId) await logUsage(usage.userId, "transcribe");
+
   return NextResponse.json({ text: data.text });
 }

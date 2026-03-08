@@ -14,8 +14,12 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center space-y-4 text-center">
-      <div className="text-muted-foreground/30">
+    <div
+      className="flex min-h-[50vh] flex-col items-center justify-center space-y-4 text-center"
+      role="alert"
+      aria-live="assertive"
+    >
+      <div className="text-muted-foreground/30" aria-hidden>
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
           <path d="M12 8v4M12 16h.01" />
@@ -27,7 +31,8 @@ export default function Error({
       </p>
       <button
         onClick={reset}
-        className="px-4 py-2 text-sm bg-gold/90 hover:bg-gold text-primary-foreground rounded-lg transition-colors"
+        className="px-4 py-2 text-sm bg-gold/90 hover:bg-gold text-primary-foreground rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        autoFocus
       >
         Try again
       </button>

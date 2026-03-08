@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUsageLimit, logUsage } from "@/lib/usage-tracking";
 
 export async function POST(request: NextRequest) {
   const { text } = await request.json();
@@ -10,6 +11,11 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
+  }
+
+  const usage = await checkUsageLimit("speak");
+  if (!usage.allowed) {
+    return NextResponse.json({ error: usage.error }, { status: 429 });
   }
 
   const response = await fetch("https://api.openai.com/v1/audio/speech", {
@@ -33,6 +39,8 @@ export async function POST(request: NextRequest) {
   }
 
   const audioBuffer = await response.arrayBuffer();
+
+  if (usage.userId) await logUsage(usage.userId, "speak");
 
   return new NextResponse(audioBuffer, {
     headers: {

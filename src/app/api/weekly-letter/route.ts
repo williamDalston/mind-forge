@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUsageLimit, logUsage } from "@/lib/usage-tracking";
 
 export async function POST(request: NextRequest) {
   const { entries } = await request.json();
@@ -10,6 +11,11 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
+  }
+
+  const usage = await checkUsageLimit("weekly-letter");
+  if (!usage.allowed) {
+    return NextResponse.json({ error: usage.error }, { status: 429 });
   }
 
   const entrySummaries = entries
@@ -82,6 +88,8 @@ Do not use bullet points. Write in flowing prose. Address them as "you." Start d
 
   const audioBuffer = await audioResponse.arrayBuffer();
   const audioBase64 = Buffer.from(audioBuffer).toString("base64");
+
+  if (usage.userId) await logUsage(usage.userId, "weekly-letter");
 
   return NextResponse.json({
     text: letterText,

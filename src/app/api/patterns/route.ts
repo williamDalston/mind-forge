@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUsageLimit, logUsage } from "@/lib/usage-tracking";
 
 export async function POST(request: NextRequest) {
   const { entries } = await request.json();
@@ -13,6 +14,11 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
+  }
+
+  const usage = await checkUsageLimit("patterns");
+  if (!usage.allowed) {
+    return NextResponse.json({ error: usage.error }, { status: 429 });
   }
 
   const entrySummaries = entries
@@ -67,6 +73,7 @@ Return ONLY valid JSON, no markdown fences or explanation.`,
 
   try {
     const patterns = JSON.parse(raw);
+    if (usage.userId) await logUsage(usage.userId, "patterns");
     return NextResponse.json(patterns);
   } catch {
     return NextResponse.json({ error: "Failed to parse AI response", raw }, { status: 502 });
